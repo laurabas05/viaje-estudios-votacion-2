@@ -1,42 +1,25 @@
 # Práctica: VIAJE DE ESTUDIOS — arma el stack con Docker Compose
 
-## ¿Qué recibes?
+## ¿Qué hemos hecho en esta práctica?
 
-- Código completo de la app Flask (`app/`) con su `Dockerfile` listo para construir Gunicorn.
-- Configuración de Nginx (`nginx/default.conf`) que ya apunta a `http://fiesta_app:8000`.
-- **No** se incluye `docker-compose.yaml`: es lo que debes crear tú.
+He creado un archivo `docker-compose.yaml` con dos contenedores referentes a dos servicios 'fiesta_app' y 'fiesta_nginx'.
 
-## Objetivo
+En el primer contenedor `backend` he usado nuestro Dockerfile para que construya la imagen, y lo he expuesto en el puerto interno 8000, sin publicarlo al host. 
 
-Construye un `docker-compose.yaml` que levante toda la solución y exponga la web en `http://localhost:8080/`, manteniendo a Flask detrás de Nginx.
+En el segundo contenedor `web` he usado una imagen oficial de `nginx`, he montado el archivo de configuracion local dentro del contenedor de nginx (en solo lectura), he mapeado el puerto `8080` del host al puerto `8000` del contenedor de nginx y, por último, con `depends_on` he hecho que Docker inicie primero el contenedor `backend` antes de levantar nuestro contenedor `web`.
 
-## Requisitos mínimos del `docker-compose.yaml`
+## App accesible en `http://localhost:8080/`
 
-1. **Servicio `fiesta_app`**
-   - usa el Dockerfile entregado.
-   - Expone Gunicorn en el puerto interno `8000` (no publiques ese puerto al host).
+![alt text](<Captura de pantalla 2025-11-12 231111.png>)
 
-2. **Servicio `fiesta_nginx`**
-   - Imagen `nginx:1.27-alpine`.
-   - Depende de que se ejecute antes fiesta_app
-   - Volumen `./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro`.
+## Comandos utilizados
 
-3. **Red**
-   - Usa la red por defecto que crea Compose.
+Levantar la app: `docker compose up`
 
+Detener la app: `docker compose down -v`
 
-## Qué debes entregar
+## ¿Por qué Nginx va delante de Flask/Gunicorn?
 
-1. `docker-compose.yaml` funcionando.
-2. Captura o evidencia de la app accesible en `http://localhost:8080/`.
-3. Lista de comandos utilizados para levantar y detener la solución.
-4. Breve explicación (3–5 líneas) de por qué Nginx va delante de Flask/Gunicorn.
+Nginx va delante de Flask/Gunicorn porque se encarga de gestionar las peticiones HTTP del cliente y luego las reparte al backend. Además, también se encarga de servir los archivos estáticos. También ayuda a que la página web aguante más cuando hay mucha gente conectada y a mantenerla más segura.
 
-## Evaluación (10 pt)
-
-- Compose levanta ambos servicios y respeta la arquitectura (4 pt).
-- Nginx sirve la app correctamente y se accede por `8080` (3 pt).
-- Entrega bien documentada (README + capturas + comandos) (2 pt).
-- Buenas prácticas adicionales (restart, variables, bonus de seguridad) (1 pt).
-
-> Recuerda: ningún navegador se conecta directamente a Flask; todo debe pasar por Nginx → Gunicorn → Flask dentro de la red creada por Docker Compose.
+Gunicorn solo se dedica a ejecutar el código de la app Flask.
