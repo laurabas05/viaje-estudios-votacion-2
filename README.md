@@ -10,7 +10,7 @@ En el segundo contenedor `web` he usado una imagen oficial de `nginx`, he montad
 
 ## App accesible en `http://localhost:8080/`
 
-![alt text](<Captura de pantalla 2025-11-12 231111.png>)
+<img width="1613" height="958" alt="Captura de pantalla 2025-11-12 231111" src="https://github.com/user-attachments/assets/43bcc8ea-67aa-4a40-9227-79684aea9dd9" />
 
 ## Comandos utilizados
 
