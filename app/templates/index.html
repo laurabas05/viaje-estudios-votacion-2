@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>VIAJE DE ESTUDIOS</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #211d33;
+        color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: rgba(9, 9, 20, 0.85);
+        border-radius: 14px;
+        padding: 2.5rem 3rem;
+        width: min(500px, 90%);
+        box-shadow: 0 18px 40px rgba(12, 12, 20, 0.9);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 2.4rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      p.tagline {
+        color: #c9c9f1;
+        margin-bottom: 2rem;
+        letter-spacing: 0.02em;
+      }
+
+      form {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .new-option-form {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .new-option-form input {
+        flex: 1;
+        border-radius: 8px;
+        border: none;
+        padding: 0.65rem 0.9rem;
+        font-size: 1rem;
+      }
+
+      .new-option-form button {
+        flex-shrink: 0;
+      }
+
+      button {
+        background: linear-gradient(135deg, #ff6d8a, #ffb35a);
+        border: none;
+        border-radius: 10px;
+        color: #211d33;
+        font-weight: bold;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 16px rgba(255, 110, 138, 0.35);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .scoreboard {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .scoreboard h2 {
+        margin-top: 0;
+        text-transform: uppercase;
+        font-size: 1.1rem;
+        letter-spacing: 0.12em;
+      }
+
+      .scoreboard ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .scoreboard li {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.35rem 0.15rem;
+        font-weight: 600;
+      }
+
+      .scoreboard span.rank {
+        color: #ff6d8a;
+      }
+
+      .total {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: #b0b0da;
+      }
+
+      .flash-messages {
+        list-style: none;
+        margin: 0 0 1rem;
+        padding: 0;
+      }
+
+      .flash-messages li {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>VIAJE DE ESTUDIOS</h1>
+      <p class="tagline">
+        Elige quien crees que bebera mas durante el viaje de estudios.
+      </p>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <ul class="flash-messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% endwith %}
+      <form method="post">
+        <input type="hidden" name="form_type" value="vote" />
+        {% for candidate, score in ranking %}
+        {% set reached_limit = user_votes | length >= max_unique_votes %}
+        {% set already_voted = candidate in user_votes %}
+        <button
+          type="submit"
+          name="vote"
+          value="{{ candidate }}"
+          aria-label="Votar por {{ candidate }}"
+          {% if already_voted or (reached_limit and not already_voted) %}disabled{% endif %}
+        >
+          {{ candidate }}
+        </button>
+        {% endfor %}
+      </form>
+      <form method="post" class="new-option-form">
+        <input type="hidden" name="form_type" value="new_candidate" />
+        <input
+          type="text"
+          name="new_candidate"
+          placeholder="Añade otro alumno..."
+          maxlength="40"
+          required
+        />
+        <button type="submit">Dar de alta</button>
+      </form>
+      <section class="scoreboard">
+        <h2>Marcador de bebedores</h2>
+        <ul id="scoreboard-list">
+          {% for candidate, score in ranking %}
+          <li>
+            <span class="rank">{{ candidate }}</span>
+            <span>{{ score }} votos</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="total" id="total-votes">Total de votos: {{ total_votes }}</p>
+      </section>
+    </main>
+    <script>
+      const scoreboardList = document.getElementById("scoreboard-list");
+      const totalVotesElement = document.getElementById("total-votes");
+      const REFRESH_INTERVAL_MS = 5000;
+
+      async function fetchScores() {
+        try {
+          const response = await fetch("/api/scores");
+          if (!response.ok) {
+            throw new Error(`Respuesta inválida: ${response.status}`);
+          }
+          const data = await response.json();
+          renderScores(data);
+        } catch (error) {
+          console.error("No se pudieron actualizar los votos", error);
+        }
+      }
+
+      function renderScores(data) {
+        scoreboardList.innerHTML = "";
+        data.ranking.forEach(({ candidate, score }) => {
+          const li = document.createElement("li");
+
+          const candidateSpan = document.createElement("span");
+          candidateSpan.className = "rank";
+          candidateSpan.textContent = candidate;
+
+          const scoreSpan = document.createElement("span");
+          scoreSpan.textContent = `${score} votos`;
+
+          li.append(candidateSpan, scoreSpan);
+          scoreboardList.appendChild(li);
+        });
+        totalVotesElement.textContent = `Total de votos: ${data.total_votes}`;
+      }
+
+      fetchScores();
+      setInterval(fetchScores, REFRESH_INTERVAL_MS);
+    </script>
+  </body>
+</html>
