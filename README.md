@@ -4,9 +4,9 @@
 
 He creado un archivo `docker-compose.yaml` con dos contenedores referentes a dos servicios 'fiesta_app' y 'fiesta_nginx'.
 
-En el primer contenedor `backend` he usado nuestro Dockerfile para que construya la imagen, y lo he expuesto en el puerto interno 8000, sin publicarlo al host. 
+En el primer contenedor `fiesta_app` he usado nuestro Dockerfile para que construya la imagen, y lo he expuesto en el puerto interno 8000, sin publicarlo al host. 
 
-En el segundo contenedor `web` he usado una imagen oficial de `nginx`, he montado el archivo de configuracion local dentro del contenedor de nginx (en solo lectura), he mapeado el puerto `8080` del host al puerto `8000` del contenedor de nginx y, por último, con `depends_on` he hecho que Docker inicie primero el contenedor `backend` antes de levantar nuestro contenedor `web`.
+En el segundo contenedor `fiesta_nginx` he usado una imagen oficial de `nginx`, he montado el archivo de configuracion local dentro del contenedor de nginx (en solo lectura), he mapeado el puerto `8080` del host al puerto `8000` del contenedor de nginx y, por último, con `depends_on` he hecho que Docker inicie primero el contenedor `fiesta_app` antes de levantar nuestro contenedor `web`.
 
 ## App accesible en `http://localhost:8080/`
 
